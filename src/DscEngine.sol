@@ -27,6 +27,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/shared/interfaces/AggregatorV3Interface.sol";
 import {console2} from "forge-std/console2.sol";
 import {Script} from "forge-std/Script.sol";
+import {OracleLib} from "./libraries/OracleLib.sol";
 
 /**
  * @title DscEngine
@@ -52,6 +53,12 @@ contract DscEngine is ReentrancyGuard, Script {
     error DscEngine__MintDscFailed();
     error DscEngine__HealthFactorOk(uint256 healthFactor);
     error DscEngine__RedeemAmountIsMoreThanAvailable(uint256 amount, uint256 available);
+
+    ///////////////////////
+    // Type Declarations
+    ///////////////////////
+
+    using OracleLib for AggregatorV3Interface;
 
     ///////////////////////
     // State Variables
@@ -387,7 +394,7 @@ contract DscEngine is ReentrancyGuard, Script {
     function getCollateralAmountFromUsd(address _collateralAddress, uint256 _usdAmount) public view returns (uint256) {
         address feed = s_priceFeeds[_collateralAddress];
         AggregatorV3Interface priceFeed = AggregatorV3Interface(feed);
-        (, int256 price,,,) = priceFeed.latestRoundData();
+        (, int256 price,,,) = priceFeed.stalePriceCheck();
         if (price == 0) {
             return 0;
         }
@@ -405,7 +412,7 @@ contract DscEngine is ReentrancyGuard, Script {
     function getCollateralValueInUsd(address _collateralAddress, uint256 _amount) public view returns (uint256) {
         address feed = s_priceFeeds[_collateralAddress];
         AggregatorV3Interface priceFeed = AggregatorV3Interface(feed);
-        (, int256 price,,,) = priceFeed.latestRoundData();
+        (, int256 price,,,) = priceFeed.stalePriceCheck();
         console2.log("priceFeed %s", price);
 
         // The returned price is in 8 decimals

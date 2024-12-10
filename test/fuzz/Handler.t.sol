@@ -87,11 +87,11 @@ contract Handler is Test {
         timesMintIsCalled++;
     }
 
-    function updateCollateralPrice(uint96 newPrice) public {
-        int256 newPriceInt = int256(uint256(newPrice));
-        MockV3Aggregator priceFeed = MockV3Aggregator(wethUsdPriceFeed);
-        priceFeed.updateAnswer(newPriceInt);
-    }
+    // function updateCollateralPrice(uint96 newPrice) public {
+    //     int256 newPriceInt = int256(uint256(newPrice));
+    //     MockV3Aggregator priceFeed = MockV3Aggregator(wethUsdPriceFeed);
+    //     priceFeed.updateAnswer(newPriceInt);
+    // }
 
     function _getCollateralFromSeed(uint256 _collateralSeed) internal view returns (ERC20Mock) {
         address[] memory tokens = dscEngine.getCollateralTokens();
