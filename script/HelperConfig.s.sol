@@ -63,10 +63,8 @@ contract HelperConfig is Script {
             vm.startBroadcast();
 
             ERC20Mock wEth = new ERC20Mock();
-            wEth.mint(msg.sender, 1000 ether);
 
             ERC20Mock wBtc = new ERC20Mock();
-            wBtc.mint(msg.sender, 1000 ether);
 
             MockV3Aggregator wEthPriceFeedAddress = new MockV3Aggregator(DECIMALS, WETH_PRICE);
             MockV3Aggregator wBtcPriceFeedAddress = new MockV3Aggregator(DECIMALS, WBTC_PRICE);

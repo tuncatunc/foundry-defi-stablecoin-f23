@@ -51,6 +51,7 @@ contract DscEngine is ReentrancyGuard, Script {
     error DscEngine__HealthFactorNotImproved(uint256 healthFactor);
     error DscEngine__MintDscFailed();
     error DscEngine__HealthFactorOk(uint256 healthFactor);
+    error DscEngine__RedeemAmountIsMoreThanAvailable(uint256 amount, uint256 available);
 
     ///////////////////////
     // State Variables
@@ -315,7 +316,15 @@ contract DscEngine is ReentrancyGuard, Script {
     function _redeemCollateral(address _from, address _to, address _collateralAddress, uint256 _amountCollateral)
         private
     {
+        // Revert if the user doesn't have enough collateral
+        if (s_userCollateral[_from][_collateralAddress] < _amountCollateral) {
+            revert DscEngine__RedeemAmountIsMoreThanAvailable(
+                _amountCollateral, s_userCollateral[_from][_collateralAddress]
+            );
+        }
+
         s_userCollateral[_from][_collateralAddress] -= _amountCollateral;
+        emit DscEngine__CollateralRedeemed(_from, _to, _collateralAddress, _amountCollateral);
 
         // Transfer collateral to user
         bool success = IERC20(_collateralAddress).transfer(_to, _amountCollateral);
@@ -323,9 +332,7 @@ contract DscEngine is ReentrancyGuard, Script {
         if (!success) {
             revert DscEngine__TransferCollateralFailed(_collateralAddress, _amountCollateral);
         }
-        _revertIfHealthFactorIsBroken(msg.sender);
-
-        emit DscEngine__CollateralRedeemed(_from, _to, _collateralAddress, _amountCollateral);
+        // _revertIfHealthFactorIsBroken(msg.sender);
     }
 
     /**
@@ -345,8 +352,17 @@ contract DscEngine is ReentrancyGuard, Script {
     ///////////////////////
     // Public and View Functions
     ///////////////////////
+
+    function getCollateralTokens() public view returns (address[] memory) {
+        return s_collateralTokens;
+    }
+
+    function getDecentralizedStableCoin() public view returns (address) {
+        return address(i_dsc);
+    }
+
     function getUserCollateralValueInUsd(address _user) public view returns (uint256) {
-        console2.log("getUserCollateralValueInUsd(user: %s)", _user);
+        // console2.log("getUserCollateralValueInUsd(user: %s)", _user);
 
         // return user's collateral value in USD
         // Loop through all the collaterals of the user and get the value in USD
@@ -372,6 +388,9 @@ contract DscEngine is ReentrancyGuard, Script {
         address feed = s_priceFeeds[_collateralAddress];
         AggregatorV3Interface priceFeed = AggregatorV3Interface(feed);
         (, int256 price,,,) = priceFeed.latestRoundData();
+        if (price == 0) {
+            return 0;
+        }
 
         // The returned price is in 8 decimals
         // 1 ETH = 1000 USD
@@ -399,11 +418,19 @@ contract DscEngine is ReentrancyGuard, Script {
         return usdValue;
     }
 
+    function getCollateralAmount(address _collateralAddress, address _user) public view returns (uint256) {
+        return s_userCollateral[_user][_collateralAddress];
+    }
+
     function getAccountInfo(address _user)
         external
         view
         returns (uint256 totalDscMinted, uint256 collateralValueInUsd)
     {
         return _getAccountInfo(_user);
+    }
+
+    function getCollateralPriceFeed(address _collateralAddress) public view returns (address) {
+        return s_priceFeeds[_collateralAddress];
     }
 }

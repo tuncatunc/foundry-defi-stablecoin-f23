@@ -22,8 +22,6 @@ contract DeployDsc is Script {
 
         vm.startBroadcast(networkConfig.deployerKey);
         address owner = vm.addr(networkConfig.deployerKey);
-        console2.log("Deploying DecentralizedStableCoin owner %s", owner);
-        console2.log("msg.sender %s addressof DeployDsc %s", msg.sender, address(this));
         DecentralizedStableCoin dsc = new DecentralizedStableCoin(owner);
         DscEngine dscEngine = new DscEngine(tokenAddresses, priceFeeds, address(dsc));
 
